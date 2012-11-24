@@ -3,7 +3,6 @@ LDTP v2 client init file
 
 @author: Eitan Isaacson <eitan@ascender.com>
 @author: Nagappan Alagappan <nagappan@gmail.com>
-@author: John Yingjun Li <yjli@vmware.com>
 @copyright: Copyright (c) 2009 Eitan Isaacson
 @copyright: Copyright (c) 2009-12 Nagappan Alagappan
 @license: LGPL
@@ -41,6 +40,9 @@ _pollEvents = None
 _file_logger = None
 _ldtp_debug = client._ldtp_debug
 _ldtp_windows_env = client._ldtp_windows_env
+
+if 'LDTP_DEBUG' in os.environ:
+    _ldtp_debug = os.environ['LDTP_DEBUG']
 
 def setHost(host):
     client._client.setHost(host)
@@ -172,11 +174,8 @@ class PollLogs:
                     # Socket error
                     break
             except:
-                try:
-                    log(traceback.format_exc())
-                    self._stop = False
-                except:
-                    pass
+                log(traceback.format_exc())
+                self._stop = False
                 break
 
     def poll_server(self):
@@ -188,11 +187,8 @@ class PollLogs:
         try:
             message = getlastlog()
         except socket.error:
-            log(traceback.format_exc())
-            # Connection to server might be failed
-            return False
-        except:
-            log(traceback.format_exc())
+            t = traceback.format_exc()
+            log(t)
             # Connection to server might be failed
             return False
 
@@ -223,7 +219,7 @@ class PollLogs:
 def logFailures(*args):
     # Do nothing. For backward compatability
     warnings.warn('Use Mago framework - http://mago.ubuntu.com', DeprecationWarning)
-
+    pass
 
 def _populateNamespace(d):
     for method in client._client.system.listMethods():
@@ -258,11 +254,8 @@ class PollEvents:
                     # Socket error
                     break
             except:
-                try:
-                    log(traceback.format_exc())
-                    self._stop = False
-                except:
-                    pass
+                log(traceback.format_exc())
+                self._stop = False
                 break
 
     def poll_server(self):
@@ -355,6 +348,7 @@ def imagecapture(window_name = None, out_file = None, x = 0, y = 0,
         out_file = tempfile.mktemp('.png', 'ldtp_')
     else:
         out_file = os.path.expanduser(out_file)
+        
     ### Windows compatibility
     if _ldtp_windows_env:
         if width == None:
@@ -371,58 +365,50 @@ def imagecapture(window_name = None, out_file = None, x = 0, y = 0,
 
     return out_file
 
-### WINDOWS
-### XML-RPC.NET doesn't support optional arguments
-### We have to wrap those wrappers locally
-if _ldtp_windows_env:
-    def wait(timeout=5):
-        return _remote_wait(timeout)
-    def waittillguiexist(window_name, object_name = '',
-                         guiTimeOut = 30, state = ''):
-        return _remote_waittillguiexist(window_name, object_name,
-                                        guiTimeOut, state)
-    
-    def waittillguinotexist(window_name, object_name = '',
-                            guiTimeOut = 30, state = ''):
-        return _remote_waittillguinotexist(window_name, object_name,
-                                           guiTimeOut, state)
-    def guiexist(window_name, object_name = ''):
-        return _remote_guiexist(window_name, object_name)
-    def launchapp(cmd, args = [], delay = 0, env = 1, lang = "C"):
-        return _remote_launchapp(cmd, args, delay, env, lang)
-    def hasstate(window_name, object_name, state, guiTimeOut = 0):
-        return _remote_hasstate(window_name, object_name, state, guiTimeOut)
-    def selectrow(window_name, object_name, row_text):
-        return _remote_selectrow(window_name, object_name, row_text, False)
-    def verifyselectrow(window_name, object_name, row_text):
-        return _remote_verifyselectrow(window_name, object_name, row_text, False)
-    def getchild(window_name, child_name = '', role = '', parent = ''):
-        return _remote_getchild(window_name, child_name, role, parent)
-    def enterstring(window_name, object_name = '', data = ''):
-        return _remote_enterstring(window_name, object_name, data)
-    def setvalue(window_name, object_name = '', data = ''):
-        return _remote_setvalue(window_name, object_name, float(data))
-    def grabfocus(window_name, object_name = ''):
-        return _remote_grabfocus(window_name, object_name)
-    def copytext(window_name, object_name, start, end = -1):
-        return _remote_copytext(window_name, object_name, start, end)
-    def cuttext(window_name, object_name, start, end = -1):
-        return _remote_cuttext(window_name, object_name, start, end)
-    def deletetext(window_name, object_name, start, end = -1):
-        return _remote_deletetext(window_name, object_name, start, end)
-    def startprocessmonitor(process_name, interval = 2):
-        return _remote_startprocessmonitor(process_name, interval)
-    def generatemouseevent(x, y, eventType = 'b1c'):
-        return _remote_generatemouseevent(x, y, eventType)
-    def simulatemousemove(source_x, source_y, dest_x, dest_y, delay = 0.0):
-        return _remote_simulatemousemove(source_x, source_y, dest_x, dest_y, delay)
-    def gettextvalue(window_name, object_name, startPosition = 0, endPosition = 0):
-        return _remote_gettextvalue(window_name, object_name, startPosition, endPosition)
-    def getcellvalue(window_name, object_name, row, column = 0):
-        return _remote_getcellvalue(window_name, object_name, row, column)
-    def getobjectnameatcoords(waitTime = 0):
-        return _remote_getobjectnameatcoords(waitTime)
-### WINDOWS
+def wait(timeout=5):
+    return _remote_wait(timeout)
+def waittillguiexist(window_name, object_name = '',
+                     guiTimeOut = 30, state = ''):
+    return _remote_waittillguiexist(window_name, object_name,
+                                    guiTimeOut)
+def waittillguinotexist(window_name, object_name = '',
+                        guiTimeOut = 30, state = ''):
+    return _remote_waittillguinotexist(window_name, object_name,
+                                       guiTimeOut)
+def guiexist(window_name, object_name = ''):
+    return _remote_guiexist(window_name, object_name)
+def launchapp(cmd, args = [], delay = 0, env = 1, lang = "C"):
+    return _remote_launchapp(cmd, args, delay, env, lang)
+def hasstate(window_name, object_name, state, guiTimeOut = 0):
+    return _remote_hasstate(window_name, object_name, state, guiTimeOut)
+def selectrow(window_name, object_name, row_text):
+    return _remote_selectrow(window_name, object_name, row_text, False)
+def getchild(window_name, child_name = '', role = '', parent = ''):
+    return _remote_getchild(window_name, child_name, role, parent)
+def enterstring(window_name, object_name = '', data = ''):
+    return _remote_enterstring(window_name, object_name, data)
+def setvalue(window_name, object_name, data):
+    return _remote_setvalue(window_name, object_name, float(data))
+def grabfocus(window_name, object_name = ''):
+    # On Linux just with window name, grab focus doesn't work
+    # So, we can't make this call generic
+    return _remote_grabfocus(window_name, object_name)
+def copytext(window_name, object_name, start, end = -1):
+    return _remote_copytext(window_name, object_name, start, end)
+def cuttext(window_name, object_name, start, end = -1):
+    return _remote_cuttext(window_name, object_name, start, end)
+def deletetext(window_name, object_name, start, end = -1):
+    return _remote_deletetext(window_name, object_name, start, end)
+def startprocessmonitor(process_name, interval = 2):
+    return _remote_startprocessmonitor(process_name, interval)
+def gettextvalue(window_name, object_name, startPosition = 0, endPosition = 0):
+    return unicode(_remote_gettextvalue(window_name, object_name, startPosition, endPosition))
+def getcellvalue(window_name, object_name, row_index, column = 0):
+    return _remote_getcellvalue(window_name, object_name, row_index, column)
+def getcellsize(window_name, object_name, row_index, column = 0):
+    return _remote_getcellsize(window_name, object_name, row_index, column)
+def getobjectnameatcoords(waitTime = 0):
+    return _remote_getobjectnameatcoords(waitTime)
 
 def onwindowcreate(window_name, fn_name, *args):
     """
